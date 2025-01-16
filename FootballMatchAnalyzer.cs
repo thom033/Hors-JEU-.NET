@@ -114,18 +114,21 @@ class FootballMatchAnalyzer
 
         int redPlayerId = 1;
         int bluePlayerId = 1;
-        AddPlayers(image, redMask, Color.Red, "RT", ref equipe1, ref redPlayerId, ball);
-        AddPlayers(image, blueMask, Color.Blue, "BT", ref equipe2, ref bluePlayerId, ball);
+        AddPlayers(image, redMask, Color.Red, "RT", ref equipe1, ref redPlayerId);
+        AddPlayers(image, blueMask, Color.Blue, "BT", ref equipe2, ref bluePlayerId);
+
+        List<Player> team = OneTeam(equipe1, equipe2);
+        Boolean isOnlyDef = OnlyDefender(team);
+        Boolean isOnlyAtt = OnlyAttack(team);
+        SetPlayerWithBall(team, ball);
+        PaintHasBall(image, team);
 
         // Assigner les rôles des joueurs
         AssignRoles(equipe1, image.Width, image.Height, isLeftToRight: true);
         AssignRoles(equipe2, image.Width, image.Height, isLeftToRight: false);
 
-        Player goalkeeper1 = DetectGoalKeeper(equipe1, redMask, image, "Haut", image.Width, image.Height, Color.Red);
-        Player goalkeeper2 = DetectGoalKeeper(equipe2, blueMask, image, "Bas", image.Width, image.Height, Color.Blue);
-
-        // Player lastDefender1 = DetectLastDefender(equipe1, image, image.Height);
-        // Player lastDefender2 = DetectLastDefender(equipe2, image, image.Height);
+        Player goalkeeper1 = DetectGoalKeeper(equipe1, image, "Haut", image.Width, image.Height, Color.Red);
+        Player goalkeeper2 = DetectGoalKeeper(equipe2, image, "Bas", image.Width, image.Height, Color.Blue);
 
         Console.WriteLine("Equipe 1 (Rouge) :");
         foreach (var player in equipe1)
@@ -134,20 +137,13 @@ class FootballMatchAnalyzer
         foreach (var player in equipe2)
             Console.WriteLine(player.ToString());
 
-        // Console.WriteLine("\nDernier défenseur de l'équipe 1 :");
-        // Console.WriteLine(lastDefender1 != null ? lastDefender1.ToString() : "Aucun");
-
-        // Console.WriteLine("\nDernier défenseur de l'équipe 2 :");
-        // Console.WriteLine(lastDefender2 != null ? lastDefender2.ToString() : "Aucun");
-
         if (ball != null)
         {
             Console.WriteLine($"\nBallon détecté : {ball}");
             Console.WriteLine("\nAnalyse des attaquants :");
 
             // Marquer les attaquants hors-jeu pour chaque équipe
-            MarkOffsideAttackers(image, equipe1, equipe2, blueMask, "Bas", image.Height);
-            MarkOffsideAttackers(image, equipe2, equipe1, redMask, "Haut", image.Height);
+            MarkOffsideAttackers(image, equipe1, equipe2, image.Height);
         }
         else
         {
@@ -159,6 +155,82 @@ class FootballMatchAnalyzer
     }
 
 
+    static List<Player> OneTeam(List<Player> teamA, List<Player> teamB)
+    {
+        List<Player> combinedTeam = new List<Player>();
+        combinedTeam.AddRange(teamA);
+        combinedTeam.AddRange(teamB);
+        return combinedTeam;
+    }
+
+    static void SetPlayerWithBall(List<Player> team, Ball ball)
+    {
+        double minDistance = double.MaxValue;
+        Player closestPlayer = null;
+
+        foreach (var player in team)
+        {
+            double distance = EuclideanDistance(player.Position, ball.Position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestPlayer = player;
+            }
+        }
+
+        if (closestPlayer != null)
+        {
+            closestPlayer.HasBall = true;
+        }
+    }
+
+    static bool OnlyDefender(List<Player> team)
+    {
+        bool hasGoalkeeper = false;
+        bool hasDefender = false;
+
+        foreach (var player in team)
+        {
+            if (player.Role == "Goalkeeper")
+            {
+                hasGoalkeeper = true;
+            }
+            else if (player.Role == "Défenseur")
+            {
+                hasDefender = true;
+            }
+        }
+
+        if (hasGoalkeeper && hasDefender)
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    static bool OnlyAttack(List<Player> team)
+    {
+        bool hasGoalkeeper = false;
+        bool hasAttacker = false;
+
+        foreach (var player in team)
+        {
+            if (player.Role == "Goalkeeper")
+            {
+                hasGoalkeeper = true;
+            }
+            else if (player.Role == "Attaquant")
+            {
+                hasAttacker = true;
+            }
+        }
+
+        if (hasGoalkeeper && hasAttacker)
+        {
+            return true;
+        }
+        return false;
+    }
     static void AssignRoles(List<Player> team, int fieldWidth, int fieldHeight, bool isLeftToRight)
     {
         // Déterminer les lignes de but
@@ -231,7 +303,7 @@ class FootballMatchAnalyzer
         return ball;
     }
 
-    static void AddPlayers(Mat image, Mat mask, Color color, string label, ref List<Player> team, ref int playerId, Ball ball)
+    static void AddPlayers(Mat image, Mat mask, Color color, string label, ref List<Player> team, ref int playerId)
     {
         VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
         CvInvoke.FindContours(mask, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
@@ -242,16 +314,16 @@ class FootballMatchAnalyzer
             Rectangle rect = CvInvoke.BoundingRectangle(contour);
             Point position = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
 
-            bool hasBall = ball != null && EuclideanDistance(position, ball.Position) < 60.0;
+            // bool hasBall = ball != null && EuclideanDistance(position, ball.Position) < distance_ballon;
 
-            Player player = new Player(playerId++, hasBall, position);
+            Player player = new Player(playerId++, false, position);
             team.Add(player);
 
             CvInvoke.Rectangle(image, rect, new Bgr(color).MCvScalar, 2);
         }
     }
 
-    static Player DetectGoalKeeper(List<Player> players, Mat mask, Mat image, string teamPosition, int fieldWidth, int fieldHeight, Color color)
+    static Player DetectGoalKeeper(List<Player> players, Mat image, string teamPosition, int fieldWidth, int fieldHeight, Color color)
     {
         Point goalCenter = teamPosition == "Haut"
             ? new Point(fieldWidth / 2, 0)
@@ -390,6 +462,21 @@ class FootballMatchAnalyzer
         return offsidePlayers;
     }
 
+    static List<Player> NotOffSide(List<Player> allteam, List<Player> offside)
+    {
+        List<Player> notOffsidePlayers = new List<Player>();
+
+        foreach (var player in allteam)
+        {
+            if (!offside.Contains(player))
+            {
+                notOffsidePlayers.Add(player);
+            }
+        }
+
+        return notOffsidePlayers;
+    }
+
     static void PaintOffSide(Mat image, List<Player> team)
     {
         foreach (var player in team)
@@ -411,34 +498,35 @@ class FootballMatchAnalyzer
         }
     }
 
-    static void MarkOffsideAttackers(Mat image, List<Player> team1, List<Player> team2, Mat mask, string opposingTeamPosition, int fieldHeight)
+    static void PaintHasBall(Mat image, List<Player> team)
+    {
+        foreach (var player in team)
+        {
+            if (player.HasBall)
+            {
+                CvInvoke.PutText(image, $"Ball #{player.Number}",
+                    new Point(player.Position.X - 5, player.Position.Y - 5),
+                    FontFace.HersheySimplex, 0.5, new MCvScalar(0, 0, 255));
+            }
+        }
+    }
+    static void MarkOffsideAttackers(Mat image, List<Player> team1, List<Player> team2, int fieldHeight)
     {
         List<Player> teamAttack = Player.GetAttaquants(team1, team2);
         List<Player> teamDefense = Player.GetDefenseurs(team1, team2);
-
-        Player playerWithBall = Player.GetPlayerWithBall(teamAttack);
 
         // Détecter le dernier défenseur de l'équipe adverse
         Player lastDefender = DetectLastDefender(teamDefense, image, fieldHeight);
         if (lastDefender == null) return;
 
-        bool isOpponentAtBottom = opposingTeamPosition == "Bas";
-        int offsideLineY = lastDefender.Position.Y;
-
-        // Vérifier si le ballon est devant ou derrière le dernier défenseur
-        // bool isBallAheadOfLastDefender = isOpponentAtBottom
-        //     ? playerWithBall.Position.Y > lastDefender.Position.Y
-        //     : playerWithBall.Position.Y < lastDefender.Position.Y;
-
-        // Déterminer la moitié du terrain
-        int midFieldLineY = fieldHeight / 2;
-
         int lastDefenderY = lastDefender.Position.Y;
         int goalkeeperY = GetGoalkeeper(teamDefense).Position.Y;
 
         List<Player> offsidePlayers = IsOffSide(teamAttack, lastDefenderY, goalkeeperY);
+        List<Player> notOffsidePlayers = NotOffSide(teamAttack, offsidePlayers);
 
         PaintOffSide(image, offsidePlayers);
+        PaintOffSide(image, notOffsidePlayers);
     }
 
     static bool IsInMask(Player player, Mat mask)

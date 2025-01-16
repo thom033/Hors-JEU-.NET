@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "eiwf1xHIRa8=",
+  "dgSpecHash": "wyb8C5yb180=",
   "success": true,
-  "projectFilePath": "E:\\S5\\FootTest\\FootTest.csproj",
+  "projectFilePath": "E:\\S5\\Hors-JEU-.NET\\FootTest.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\itu\\.nuget\\packages\\emgu.cv\\4.10.0.5680\\emgu.cv.4.10.0.5680.nupkg.sha512",
     "C:\\Users\\itu\\.nuget\\packages\\emgu.cv.runtime.windows\\4.10.0.5680\\emgu.cv.runtime.windows.4.10.0.5680.nupkg.sha512",
