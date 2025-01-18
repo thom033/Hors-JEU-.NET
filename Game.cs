@@ -18,6 +18,9 @@ namespace Foot
 
         public Point BallPosition { get; set; }
 
+        public Rectangle TopGoal { get; private set; }
+        public Rectangle BottomGoal { get; private set; }
+
         // Initialisation du match
         public void Initialize(Mat image)
         {
@@ -26,6 +29,7 @@ namespace Foot
 
             // Ireto initialisation ireto tsy maintsy milahatra
             InitializeBall(hsvImage, image);
+            InitializeGoals(image);
             InitializeAllTeams(image);
             InitializeTeamAmbonyGoal();
             InitializeTeamTokonyHananaBol();
@@ -199,6 +203,123 @@ namespace Foot
             }
             combinedMask.Dispose();
             Console.WriteLine("Aucune balle détectée");
+        }
+
+        public void InitializeGoals(Mat image)
+        {
+            Mat hsvImage = new Mat();
+            CvInvoke.CvtColor(image, hsvImage, ColorConversion.Bgr2Hsv);
+
+            // Création des masques pour détecter les cages de couleur #2F2F2F avec plus de flexibilité
+            var masks = new List<Mat>();
+
+            // Plage principale pour #2F2F2F avec plus de tolérance
+            masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 30), new Hsv(180, 40, 70)));
+
+            // Plage secondaire pour variations plus claires/foncées
+            masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 25), new Hsv(180, 50, 80)));
+
+            // Plage pour les lignes très fines qui peuvent apparaître plus claires
+            masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 35), new Hsv(180, 30, 90)));
+
+            Mat combinedMask = new Mat();
+            if (masks.Count > 0)
+            {
+                combinedMask = masks[0].Clone();
+                for (int i = 1; i < masks.Count; i++)
+                {
+                    CvInvoke.BitwiseOr(combinedMask, masks[i], combinedMask);
+                }
+            }
+
+            // Prétraitement amélioré pour les lignes fines
+            // 1. Réduction du bruit
+            CvInvoke.GaussianBlur(combinedMask, combinedMask, new Size(3, 3), 0);
+
+            // 2. Amélioration du contraste pour les lignes fines
+            CvInvoke.Threshold(combinedMask, combinedMask, 127, 255, ThresholdType.Binary);
+
+            // 3. Détection des lignes horizontales (plus sensible)
+            Mat horizontalKernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new Size(21, 1), new Point(-1, -1));
+            Mat horizontalMask = combinedMask.Clone();
+            CvInvoke.MorphologyEx(horizontalMask, horizontalMask, MorphOp.Open, horizontalKernel, new Point(-1, -1), 1, BorderType.Default, new MCvScalar());
+
+            // 4. Détection des lignes verticales (plus sensible)
+            Mat verticalKernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new Size(1, 21), new Point(-1, -1));
+            Mat verticalMask = combinedMask.Clone();
+            CvInvoke.MorphologyEx(verticalMask, verticalMask, MorphOp.Open, verticalKernel, new Point(-1, -1), 1, BorderType.Default, new MCvScalar());
+
+            // 5. Combiner les masques et renforcer les connexions
+            CvInvoke.BitwiseOr(horizontalMask, verticalMask, combinedMask);
+            Mat dilateKernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new Size(3, 3), new Point(-1, -1));
+            CvInvoke.Dilate(combinedMask, combinedMask, dilateKernel, new Point(-1, -1), 1, BorderType.Default, new MCvScalar());
+
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            Mat hierarchy = new Mat();
+            CvInvoke.FindContours(combinedMask, contours, hierarchy, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+
+            List<Rectangle> potentialGoals = new List<Rectangle>();
+
+            for (int i = 0; i < contours.Size; i++)
+            {
+                using (VectorOfPoint contour = contours[i])
+                {
+                    Rectangle boundingBox = CvInvoke.BoundingRectangle(contour);
+                    double aspectRatio = (double)boundingBox.Width / boundingBox.Height;
+
+                    // Critères très flexibles pour les lignes fines
+                    bool isNearTopOrBottom = boundingBox.Y < image.Height * 0.2 || boundingBox.Y > image.Height * 0.8;
+                    bool hasGoodWidth = boundingBox.Width > image.Width * 0.1; // Réduit à 10% de la largeur
+                    bool hasGoodHeight = boundingBox.Height >= 1 && boundingBox.Height < image.Height * 0.2; // Accepte les lignes très fines
+                    bool hasGoodRatio = aspectRatio > 1.5; // Ratio encore plus flexible
+
+                    if (isNearTopOrBottom && hasGoodWidth && hasGoodHeight && hasGoodRatio)
+                    {
+                        using (VectorOfPoint approx = new VectorOfPoint())
+                        {
+                            CvInvoke.ApproxPolyDP(contour, approx, 0.05 * CvInvoke.ArcLength(contour, true), true);
+
+                            // Plus flexible sur le nombre de points pour les formes en U
+                            if (approx.Size >= 4 && approx.Size <= 12)
+                            {
+                                potentialGoals.Add(boundingBox);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Trier et sélectionner les cages
+            potentialGoals = potentialGoals.OrderBy(r => r.Y).ToList();
+
+            if (potentialGoals.Count >= 2)
+            {
+                TopGoal = potentialGoals[0];
+                BottomGoal = potentialGoals[potentialGoals.Count - 1];
+
+                // Visualisation
+                CvInvoke.Rectangle(image, TopGoal, new Bgr(Color.Yellow).MCvScalar, 2);
+                CvInvoke.Rectangle(image, BottomGoal, new Bgr(Color.Yellow).MCvScalar, 2);
+                Console.WriteLine("Cages détectées avec succès");
+            }
+            else
+            {
+                Console.WriteLine($"Impossible de détecter les deux cages. Nombre de cages trouvées : {potentialGoals.Count}");
+            }
+
+            // Libération des ressources
+            foreach (var mask in masks)
+            {
+                mask.Dispose();
+            }
+            combinedMask.Dispose();
+            horizontalMask.Dispose();
+            verticalMask.Dispose();
+            hsvImage.Dispose();
+            horizontalKernel.Dispose();
+            verticalKernel.Dispose();
+            dilateKernel.Dispose();
+            hierarchy.Dispose();
         }
 
     }
