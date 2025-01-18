@@ -1,34 +1,20 @@
-﻿using System;
-using System.Windows.Forms;
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
+﻿using Emgu.CV;
+using Foot;
 using System.Drawing;
 
 public class Program
 {
-    [STAThread]
     static void Main(string[] args)
     {
         // Chemin du fichier de configuration
-        string path = string.Empty;
 
-        // Utiliser une boîte de dialogue pour sélectionner l'image
-        using (OpenFileDialog openFileDialog = new OpenFileDialog())
-        {
-            openFileDialog.InitialDirectory = @"E:\S5\Prog\Foot\img";
-            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
-            openFileDialog.Title = "Sélectionnez une image à traiter";
+        // Récupère le chemin de l'image depuis le fichier de configuration
+        string path = @"E:\S5\Prog\Foot\img\exam3.jpg";
 
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                path = openFileDialog.FileName;
-            }
-        }
 
         if (string.IsNullOrEmpty(path))
         {
-            Console.WriteLine("Le chemin de l'image est introuvable ou invalide.");
+            Console.WriteLine("Le chemin de l'image est introuvable ou invalide dans le fichier de configuration.");
             return;
         }
 
@@ -53,9 +39,30 @@ public class Program
             img = resizedImg;
         }
 
-        Foot.Game game = new Foot.Game();
+        Game game = new Game();
         game.Initialize(img);
         CvInvoke.Imshow("Match Analysis", img);
         CvInvoke.WaitKey(0);
     }
+
+    private static string GetConfigValue(string key, string configFilePath)
+    {
+        if (!File.Exists(configFilePath))
+        {
+            Console.WriteLine($"Fichier de configuration introuvable : {configFilePath}");
+            return null;
+        }
+
+        foreach (var line in File.ReadAllLines(configFilePath))
+        {
+            if (line.StartsWith(key + "="))
+            {
+                return line.Substring(key.Length + 1).Trim();
+            }
+        }
+
+        Console.WriteLine($"Clé introuvable dans le fichier de configuration : {key}");
+        return null;
+    }
+
 }

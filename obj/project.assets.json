@@ -1903,11 +1903,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\S5\\Prog\\Foot\\Foot.csproj",
+      "projectUniqueName": "E:\\S5\\Hors-JEU-.NET\\Foot.csproj",
       "projectName": "Foot",
-      "projectPath": "E:\\S5\\Prog\\Foot\\Foot.csproj",
+      "projectPath": "E:\\S5\\Hors-JEU-.NET\\Foot.csproj",
       "packagesPath": "C:\\Users\\itu\\.nuget\\packages\\",
-      "outputPath": "E:\\S5\\Prog\\Foot\\obj\\",
+      "outputPath": "E:\\S5\\Hors-JEU-.NET\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\itu\\AppData\\Roaming\\NuGet\\NuGet.Config"
