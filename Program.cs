@@ -1,28 +1,87 @@
-﻿using Emgu.CV;
-using Foot;
+﻿using System;
 using System.Drawing;
+using System.Windows.Forms;
+using Emgu.CV;
+using Foot;
 
-public class Program
+public class ImageUploaderForm : Form
 {
-    static void Main(string[] args)
+    private Button importButton;
+    private Button verifyButton;
+    private PictureBox pictureBox;
+    private string imagePath;
+
+    public string ImagePath => imagePath;
+
+    public ImageUploaderForm()
     {
-        // Chemin du fichier de configuration
-
-        // Récupère le chemin de l'image depuis le fichier de configuration
-        string path = @"E:\S5\Prog\Foot\img\exam3.jpg";
-
-
-        if (string.IsNullOrEmpty(path))
+        // Initialisation du bouton "Importer Image"
+        importButton = new Button
         {
-            Console.WriteLine("Le chemin de l'image est introuvable ou invalide dans le fichier de configuration.");
+            Text = "Importer Image",
+            Dock = DockStyle.Top
+        };
+        importButton.Click += ImportButton_Click;
+
+        // Initialisation du bouton "Vérifier"
+        verifyButton = new Button
+        {
+            Text = "Vérifier",
+            Dock = DockStyle.Top
+        };
+        verifyButton.Click += VerifyButton_Click;
+
+        // Initialisation du PictureBox pour afficher l'image importée
+        pictureBox = new PictureBox
+        {
+            Dock = DockStyle.Fill,
+            SizeMode = PictureBoxSizeMode.Zoom
+        };
+
+        // Ajout des contrôles au formulaire
+        Controls.Add(pictureBox);
+        Controls.Add(verifyButton);
+        Controls.Add(importButton);
+
+        // Configuration du formulaire
+        this.WindowState = FormWindowState.Maximized;
+    }
+
+    private void ImportButton_Click(object sender, EventArgs e)
+    {
+        using (OpenFileDialog openFileDialog = new OpenFileDialog())
+        {
+            openFileDialog.InitialDirectory = "c:\\";
+            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+            openFileDialog.FilterIndex = 1;
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                imagePath = openFileDialog.FileName;
+                pictureBox.Image = System.Drawing.Image.FromFile(imagePath);
+                MessageBox.Show("Image importée avec succès: " + imagePath);
+            }
+            else
+            {
+                MessageBox.Show("Aucune image sélectionnée.");
+            }
+        }
+    }
+
+    private void VerifyButton_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(imagePath))
+        {
+            MessageBox.Show("Veuillez importer une image d'abord.");
             return;
         }
 
-        Mat img = CvInvoke.Imread(path);
+        Mat img = CvInvoke.Imread(imagePath);
 
         if (img.IsEmpty)
         {
-            Console.WriteLine("Impossible de charger l'image.");
+            MessageBox.Show("Impossible de charger l'image.");
             return;
         }
 
@@ -39,30 +98,25 @@ public class Program
             img = resizedImg;
         }
 
+        // Mettre à jour le PictureBox avec l'image redimensionnée
+        pictureBox.Image = img.ToBitmap();
+
         Game game = new Game();
         game.Initialize(img);
         CvInvoke.Imshow("Match Analysis", img);
         CvInvoke.WaitKey(0);
     }
+}
 
-    private static string GetConfigValue(string key, string configFilePath)
+public class Program
+{
+    [STAThread]
+    static void Main(string[] args)
     {
-        if (!File.Exists(configFilePath))
-        {
-            Console.WriteLine($"Fichier de configuration introuvable : {configFilePath}");
-            return null;
-        }
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
 
-        foreach (var line in File.ReadAllLines(configFilePath))
-        {
-            if (line.StartsWith(key + "="))
-            {
-                return line.Substring(key.Length + 1).Trim();
-            }
-        }
-
-        Console.WriteLine($"Clé introuvable dans le fichier de configuration : {key}");
-        return null;
+        ImageUploaderForm uploaderForm = new ImageUploaderForm();
+        Application.Run(uploaderForm);
     }
-
 }
