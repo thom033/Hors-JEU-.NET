@@ -1,2 +1,0 @@
-FilePath=C:\Users\Angelo\Pictures\saryfoot.jpg
-Option=Rouge

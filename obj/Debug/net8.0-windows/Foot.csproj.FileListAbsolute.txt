@@ -55,3 +55,6 @@ E:\S5\Hors-JEU-.NET\obj\Debug\net8.0-windows\refint\Foot.dll
 E:\S5\Hors-JEU-.NET\obj\Debug\net8.0-windows\Foot.pdb
 E:\S5\Hors-JEU-.NET\obj\Debug\net8.0-windows\Foot.genruntimeconfig.cache
 E:\S5\Hors-JEU-.NET\obj\Debug\net8.0-windows\ref\Foot.dll
+E:\S5\Hors-JEU-.NET\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+E:\S5\Hors-JEU-.NET\bin\Debug\net8.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
+E:\S5\Hors-JEU-.NET\bin\Debug\net8.0-windows\Npgsql.dll

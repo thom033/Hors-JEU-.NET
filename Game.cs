@@ -3,6 +3,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using System.Drawing;
+using Npgsql;
 
 namespace Foot
 {
@@ -82,6 +83,10 @@ namespace Foot
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
             Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number} est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
+
+            // PlayerThatHasBall.Number
+            // TeamThatHasBall.Name
+            // points = 1
 
         }
 
@@ -353,6 +358,7 @@ namespace Foot
                 if (game1.PlayerThatHasBall != null && !game1.PlayerThatHasBall.isOffSide)
                 {
                     Console.WriteLine($"But valide marqué par le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name}");
+                    InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
                 }
                 else if (game1.PlayerThatHasBall != null && game1.PlayerThatHasBall.isOffSide)
                 {
@@ -391,5 +397,22 @@ namespace Foot
             }
         }
 
+
+        public void InsertGoal(int playerId, string teamName, int points)
+        {
+            DBConnection dbConnection = new DBConnection();
+            using (NpgsqlConnection conn = dbConnection.GetConnection())
+            {
+                conn.Open();
+                string query = "INSERT INTO valiny (id_player, equipe_name, points) VALUES (@playerId, @teamName, @points)";
+                using (NpgsqlCommand command = new NpgsqlCommand(query, conn))
+                {
+                    command.Parameters.AddWithValue("@playerId", playerId);
+                    command.Parameters.AddWithValue("@teamName", teamName);
+                    command.Parameters.AddWithValue("@points", points);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }
