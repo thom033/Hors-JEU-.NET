@@ -84,11 +84,6 @@ namespace Foot
             Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
             Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number} est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
 
-            // Insert
-            if (goal)
-            {
-                InsertGoal(PlayerThatHasBall.Number, TeamThatHasBall.Name, 1);
-            }
             // PlayerThatHasBall.Number
             // TeamThatHasBall.Name
             // points = 1
@@ -363,6 +358,7 @@ namespace Foot
                 if (game1.PlayerThatHasBall != null && !game1.PlayerThatHasBall.isOffSide)
                 {
                     Console.WriteLine($"But valide marqué par le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name}");
+                    InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
                 }
                 else if (game1.PlayerThatHasBall != null && game1.PlayerThatHasBall.isOffSide)
                 {
