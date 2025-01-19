@@ -354,6 +354,8 @@ namespace Foot
             goal = false;
         }
 
+        public void InsertGoal(){
 
+        }
     }
 }
