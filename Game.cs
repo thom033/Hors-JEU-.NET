@@ -14,6 +14,8 @@ namespace Foot
 
         public Team TeamThatHasBall { get; set; } = new Team();
 
+        public Player PlayerThatHasBall { get; set; }
+
         public Team TeamHautGoal { get; set; } = new Team();
 
         public Point BallPosition { get; set; }
@@ -56,8 +58,6 @@ namespace Foot
                 Console.WriteLine($"Blue {player.Number} sur {player.PositionPlayer.Y} avec Diametre {player.Diametre}");
             }
             Console.WriteLine("-------------------------------------------------------------------");
-            Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
-            Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Team that has the goeal eny ambony: {TeamHautGoal.Name}");
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Dernier defenseur Red: {Red.DernierDefenseur(TeamHautGoal.Name == Red.Name).Number}");
@@ -79,12 +79,17 @@ namespace Foot
             {
                 Console.WriteLine($"Mety: {player.Number}");
             }
+            Console.WriteLine("-------------------------------------------------------------------");
+            Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
+            Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number}");
+
         }
 
         // Mijery Team tokony hanana anle bol
         public void InitializeTeamTokonyHananaBol()
         {
             double max = double.MaxValue;
+            Player closestPlayer = null;
             foreach (var player in Blue.PlayerList)
             {
                 Point playerCentre = new Point((int)(player.PositionPlayer.X + player.Diametre / 2), (int)(player.PositionPlayer.Y + (player.Diametre / 2)));
@@ -93,6 +98,7 @@ namespace Foot
                 if (max > temp)
                 {
                     max = temp;     // Get minimum dans les equipes bleus
+                    closestPlayer = player;
                 }
             }
 
@@ -106,9 +112,11 @@ namespace Foot
                 if (max > tempRed)
                 {
                     max = tempRed;
+                    closestPlayer = player;
                 }
             }
             TeamThatHasBall = minBlue == max ? Blue : Red;
+            PlayerThatHasBall = closestPlayer;
         }
 
         // Mijery hoe iza no goal ambony
