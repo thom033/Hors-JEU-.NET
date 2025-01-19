@@ -35,6 +35,7 @@ CREATE TABLE valiny(
     points INT NOT NULL
 );
 
+CREATE OR REPLACE VIEW equipe_points AS
 SELECT equipe_name, SUM(points) AS total_points
 FROM valiny
 GROUP BY equipe_name;

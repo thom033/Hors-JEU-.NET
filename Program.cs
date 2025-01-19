@@ -4,15 +4,18 @@ using System.Windows.Forms;
 using Emgu.CV;
 using Foot;
 
-public class Program
+namespace Foot
 {
-    [STAThread]
-    static void Main(string[] args)
+    public class Program
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
-        ImageUploaderForm uploaderForm = new ImageUploaderForm();
-        Application.Run(uploaderForm);
+            ImageUploaderForm uploaderForm = new ImageUploaderForm();
+            Application.Run(uploaderForm);
+        }
     }
 }

@@ -3,12 +3,14 @@ using System.Drawing;
 using System.Windows.Forms;
 using Emgu.CV;
 using Foot;
+
 public class ImageUploaderForm : Form
 {
     private Button importButton;
     private Button importButton2;
     private Button verifyButton;
     private Button verifyButton2;
+    private Button displayScore;
     private PictureBox pictureBox;
     private PictureBox pictureBox2;
     private string imagePath;
@@ -33,6 +35,9 @@ public class ImageUploaderForm : Form
 
         verifyButton2 = new Button { Text = "Vérifier 2", Dock = DockStyle.Top };
         verifyButton2.Click += VerifyButton_Click2;
+
+        displayScore = new Button { Text = "displayScore", Dock = DockStyle.Bottom };
+        displayScore.Click += DisplayScore_Click;
 
         pictureBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.StretchImage };
         pictureBox2 = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.StretchImage };
@@ -61,6 +66,7 @@ public class ImageUploaderForm : Form
 
         // Ajout du TableLayoutPanel au formulaire
         Controls.Add(tableLayoutPanel);
+        Controls.Add(displayScore);
 
         // Configuration du formulaire
         this.WindowState = FormWindowState.Maximized;
@@ -153,28 +159,9 @@ public class ImageUploaderForm : Form
         pictureBox2.Image = img.ToBitmap();
     }
 
-    // private Image ResizeImage(Image image, int width, int height)
-    // {
-    //     var destRect = new Rectangle(0, 0, width, height);
-    //     var destImage = new Bitmap(width, height);
-
-    //     destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-    //     using (var graphics = Graphics.FromImage(destImage))
-    //     {
-    //         graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-    //         graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-    //         graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-    //         graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-    //         graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-
-    //         using (var wrapMode = new System.Drawing.Imaging.ImageAttributes())
-    //         {
-    //             wrapMode.SetWrapMode(System.Drawing.Drawing2D.WrapMode.TileFlipXY);
-    //             graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-    //         }
-    //     }
-
-    //     return destImage;
-    // }
+    private void DisplayScore_Click(object sender, EventArgs e)
+    {
+        ScoreDisplay scoreDisplay = new ScoreDisplay();
+        scoreDisplay.Show();
+    }
 }
