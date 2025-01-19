@@ -21,6 +21,16 @@ namespace Foot
         public Rectangle TopGoal { get; private set; }
         public Rectangle BottomGoal { get; private set; }
 
+        public Boolean goal { get; set; } = false;
+
+        // Attributs pour stocker les positions des cages
+        private List<Rectangle> detectedGoals = new List<Rectangle>();
+        public List<Rectangle> DetectedGoals
+        {
+            get { return detectedGoals; }
+            private set { detectedGoals = value; }
+        }
+
         // Initialisation du match
         public void Initialize(Mat image)
         {
@@ -33,6 +43,7 @@ namespace Foot
             InitializeAllTeams(image);
             InitializeTeamAmbonyGoal();
             InitializeTeamTokonyHananaBol();
+            IsGoal();
 
             // PRINT Maivana
             foreach (var player in Red.PlayerList)
@@ -53,6 +64,7 @@ namespace Foot
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Dernier defenseur Blue: {Blue.DernierDefenseur(TeamHautGoal.Name == Blue.Name).Number}");
             Console.WriteLine("-------------------------------------------------------------------");
+            Console.WriteLine($"EstBUT : {goal}");
             Team Defense = TeamThatHasBall.Name == "Red" ? Blue : Red;
             List<Player> offSide = Team.GetOffSide(TeamThatHasBall, Defense, TeamHautGoal, image);
 
@@ -219,8 +231,11 @@ namespace Foot
             // Plage secondaire pour variations plus claires/foncées
             masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 25), new Hsv(180, 50, 80)));
 
-            // Plage pour les lignes très fines qui peuvent apparaître plus claires
+            // Plage pour les lignes ultra-fines
             masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 35), new Hsv(180, 30, 90)));
+
+            // Plage pour les lignes très claires
+            masks.Add(UtilFoot.DetectColor(hsvImage, new Hsv(0, 0, 40), new Hsv(180, 25, 100)));
 
             Mat combinedMask = new Mat();
             if (masks.Count > 0)
@@ -258,7 +273,8 @@ namespace Foot
             Mat hierarchy = new Mat();
             CvInvoke.FindContours(combinedMask, contours, hierarchy, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-            List<Rectangle> potentialGoals = new List<Rectangle>();
+            // Vider la liste des cages détectées précédemment
+            DetectedGoals.Clear();
 
             for (int i = 0; i < contours.Size; i++)
             {
@@ -267,35 +283,35 @@ namespace Foot
                     Rectangle boundingBox = CvInvoke.BoundingRectangle(contour);
                     double aspectRatio = (double)boundingBox.Width / boundingBox.Height;
 
-                    // Critères très flexibles pour les lignes fines
-                    bool isNearTopOrBottom = boundingBox.Y < image.Height * 0.2 || boundingBox.Y > image.Height * 0.8;
-                    bool hasGoodWidth = boundingBox.Width > image.Width * 0.1; // Réduit à 10% de la largeur
-                    bool hasGoodHeight = boundingBox.Height >= 1 && boundingBox.Height < image.Height * 0.2; // Accepte les lignes très fines
-                    bool hasGoodRatio = aspectRatio > 1.5; // Ratio encore plus flexible
+                    // Critères ultra-flexibles
+                    bool isNearTopOrBottom = boundingBox.Y < image.Height * 0.25 || boundingBox.Y > image.Height * 0.75;
+                    bool hasGoodWidth = boundingBox.Width > image.Width * 0.08;
+                    bool hasMinimalHeight = boundingBox.Height >= 1;
+                    bool hasMaxHeight = boundingBox.Height < image.Height * 0.25;
+                    bool hasGoodRatio = aspectRatio > 1.2;
 
-                    if (isNearTopOrBottom && hasGoodWidth && hasGoodHeight && hasGoodRatio)
+                    if (isNearTopOrBottom && hasGoodWidth && hasMinimalHeight && hasMaxHeight && hasGoodRatio)
                     {
                         using (VectorOfPoint approx = new VectorOfPoint())
                         {
-                            CvInvoke.ApproxPolyDP(contour, approx, 0.05 * CvInvoke.ArcLength(contour, true), true);
+                            CvInvoke.ApproxPolyDP(contour, approx, 0.08 * CvInvoke.ArcLength(contour, true), true);
 
-                            // Plus flexible sur le nombre de points pour les formes en U
-                            if (approx.Size >= 4 && approx.Size <= 12)
+                            if (approx.Size >= 4)
                             {
-                                potentialGoals.Add(boundingBox);
+                                DetectedGoals.Add(boundingBox);
                             }
                         }
                     }
                 }
             }
 
-            // Trier et sélectionner les cages
-            potentialGoals = potentialGoals.OrderBy(r => r.Y).ToList();
+            // Trier les cages par position Y
+            DetectedGoals = DetectedGoals.OrderBy(r => r.Y).ToList();
 
-            if (potentialGoals.Count >= 2)
+            if (DetectedGoals.Count >= 2)
             {
-                TopGoal = potentialGoals[0];
-                BottomGoal = potentialGoals[potentialGoals.Count - 1];
+                TopGoal = DetectedGoals[0];
+                BottomGoal = DetectedGoals[DetectedGoals.Count - 1];
 
                 // Visualisation
                 CvInvoke.Rectangle(image, TopGoal, new Bgr(Color.Yellow).MCvScalar, 2);
@@ -304,7 +320,7 @@ namespace Foot
             }
             else
             {
-                Console.WriteLine($"Impossible de détecter les deux cages. Nombre de cages trouvées : {potentialGoals.Count}");
+                Console.WriteLine($"Impossible de détecter les deux cages. Nombre de cages trouvées : {DetectedGoals.Count}");
             }
 
             // Libération des ressources
@@ -321,6 +337,23 @@ namespace Foot
             dilateKernel.Dispose();
             hierarchy.Dispose();
         }
+
+        public void IsGoal()
+        {
+            // Vérification si la balle est dans une des cages détectées
+            foreach (var goalArea in DetectedGoals)
+            {
+                if (goalArea.Contains(BallPosition))
+                {
+                    goal = true;
+                    Console.WriteLine($"But marqué par {TeamThatHasBall.Name}");
+                    return;
+                }
+            }
+
+            goal = false;
+        }
+
 
     }
 }
