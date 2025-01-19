@@ -14,6 +14,8 @@ namespace Foot
 
         public Team TeamThatHasBall { get; set; } = new Team();
 
+        public Player PlayerThatHasBall { get; set; }
+
         public Team TeamHautGoal { get; set; } = new Team();
 
         public Point BallPosition { get; set; }
@@ -56,8 +58,6 @@ namespace Foot
                 Console.WriteLine($"Blue {player.Number} sur {player.PositionPlayer.Y} avec Diametre {player.Diametre}");
             }
             Console.WriteLine("-------------------------------------------------------------------");
-            Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
-            Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Team that has the goeal eny ambony: {TeamHautGoal.Name}");
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Dernier defenseur Red: {Red.DernierDefenseur(TeamHautGoal.Name == Red.Name).Number}");
@@ -67,7 +67,6 @@ namespace Foot
             Console.WriteLine($"EstBUT : {goal}");
             Team Defense = TeamThatHasBall.Name == "Red" ? Blue : Red;
             List<Player> offSide = Team.GetOffSide(TeamThatHasBall, Defense, TeamHautGoal, image);
-
             foreach (var player in offSide)
             {
                 Console.WriteLine($"Hors-jeu: {player.Number}");
@@ -79,12 +78,18 @@ namespace Foot
             {
                 Console.WriteLine($"Mety: {player.Number}");
             }
+            VerifyPlayerThatHasBallOffside(offSide);
+            Console.WriteLine("-------------------------------------------------------------------");
+            Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
+            Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number} est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
+
         }
 
         // Mijery Team tokony hanana anle bol
         public void InitializeTeamTokonyHananaBol()
         {
             double max = double.MaxValue;
+            Player closestPlayer = null;
             foreach (var player in Blue.PlayerList)
             {
                 Point playerCentre = new Point((int)(player.PositionPlayer.X + player.Diametre / 2), (int)(player.PositionPlayer.Y + (player.Diametre / 2)));
@@ -93,6 +98,7 @@ namespace Foot
                 if (max > temp)
                 {
                     max = temp;     // Get minimum dans les equipes bleus
+                    closestPlayer = player;
                 }
             }
 
@@ -106,9 +112,11 @@ namespace Foot
                 if (max > tempRed)
                 {
                     max = tempRed;
+                    closestPlayer = player;
                 }
             }
             TeamThatHasBall = minBlue == max ? Blue : Red;
+            PlayerThatHasBall = closestPlayer;
         }
 
         // Mijery hoe iza no goal ambony
@@ -338,6 +346,27 @@ namespace Foot
             hierarchy.Dispose();
         }
 
+        public void ValidateGoal(Game game1)
+        {
+            if (this.goal)
+            {
+                if (game1.PlayerThatHasBall != null && !game1.PlayerThatHasBall.isOffSide)
+                {
+                    Console.WriteLine($"But valide marqué par le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name}");
+                }
+                else if (game1.PlayerThatHasBall != null && game1.PlayerThatHasBall.isOffSide)
+                {
+                    Console.WriteLine($"But invalide : le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name} était hors-jeu");
+                    this.goal = false;
+                }
+                else
+                {
+                    Console.WriteLine("Impossible de valider le but : joueur non identifié");
+                    this.goal = false;
+                }
+            }
+        }
+
         public void IsGoal()
         {
             // Vérification si la balle est dans une des cages détectées
@@ -346,7 +375,6 @@ namespace Foot
                 if (goalArea.Contains(BallPosition))
                 {
                     goal = true;
-                    Console.WriteLine($"But marqué par {TeamThatHasBall.Name}");
                     return;
                 }
             }
@@ -355,6 +383,14 @@ namespace Foot
         }
 
         public void InsertGoal(){
+        public void VerifyPlayerThatHasBallOffside(List<Player> offside)
+        {
+            if (PlayerThatHasBall != null)
+            {
+                PlayerThatHasBall.isOffSide = offside.Any(p => p.Number == PlayerThatHasBall.Number);
+                Console.WriteLine($"Le joueur {PlayerThatHasBall.Number} qui a le ballon est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
+            }
+        }
 
         }
     }
