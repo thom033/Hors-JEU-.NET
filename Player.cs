@@ -10,6 +10,8 @@ namespace Foot
 
         public Point PositionPlayer { get; set; }
 
+        public bool isOffSide { get; set; } = false;
+
         public Player(int number, Double diametre, Point positionPlayer)
         {
             Number = number;

@@ -13,6 +13,8 @@ public class ImageUploaderForm : Form
     private PictureBox pictureBox2;
     private string imagePath;
     private string imagePath2;
+    private Game game1;
+    private Game game2;
 
     public string ImagePath => imagePath;
     public string ImagePath2 => imagePath2;
@@ -44,7 +46,7 @@ public class ImageUploaderForm : Form
         };
         tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
         tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        
+
         tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -124,8 +126,8 @@ public class ImageUploaderForm : Form
             return;
         }
 
-        Game game = new Game();
-        game.Initialize(img);
+        game1 = new Game();
+        game1.Initialize(img);
         pictureBox.Image = img.ToBitmap();
     }
 
@@ -145,8 +147,9 @@ public class ImageUploaderForm : Form
             return;
         }
 
-        Game game = new Game();
-        game.Initialize(img);
+        game2 = new Game();
+        game2.Initialize(img);
+        game2.ValidateGoal(game1);
         pictureBox2.Image = img.ToBitmap();
     }
 
