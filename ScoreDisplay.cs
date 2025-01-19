@@ -61,9 +61,6 @@ namespace Foot
 
         public void Show()
         {
-            // Application.EnableVisualStyles();
-            // Application.SetCompatibleTextRenderingDefault(false);
-            // Application.Run(this);
             this.ShowDialog();
         }
     }

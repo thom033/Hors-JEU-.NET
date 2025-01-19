@@ -121,44 +121,5 @@ namespace Foot
             }
             return result;
         }
-        
-        public int GetIdTeamByTeamName(string teamName)
-        {
-            int idTeam = -1;
-            DBConnection dbConnection = new DBConnection();
-            using (NpgsqlConnection conn = dbConnection.GetConnection())
-            {
-                conn.Open();
-                string query = "SELECT id_equipe FROM equipes WHERE equipe_name = @teamName";
-                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@teamName", teamName);
-                    using (NpgsqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            idTeam = reader.GetInt32(0);
-                        }
-                    }
-                }
-            }
-            return idTeam;
-        }
-
-        public void InsertPlayer(int idPlayer, int idTeam)
-        {
-            DBConnection dbConnection = new DBConnection();
-            using (NpgsqlConnection conn = dbConnection.GetConnection())
-            {
-                conn.Open();
-                string query = "INSERT INTO players (id_player, id_team) VALUES (@idPlayer, @idTeam)";
-                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@idPlayer", idPlayer);
-                    cmd.Parameters.AddWithValue("@idTeam", idTeam);
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
     }
 }
