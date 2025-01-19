@@ -87,22 +87,15 @@ public class ImageUploaderForm : Form
         // Redimensionner l'image si elle est trop grande
         const int MAX_WIDTH = 1280;
         const int MAX_HEIGHT = 720;
-
-        if (img.Width > MAX_WIDTH || img.Height > MAX_HEIGHT)
-        {
-            double scale = Math.Min((double)MAX_WIDTH / img.Width, (double)MAX_HEIGHT / img.Height);
-            Size newSize = new Size((int)(img.Width * scale), (int)(img.Height * scale));
-            Mat resizedImg = new Mat();
-            CvInvoke.Resize(img, resizedImg, newSize);
-            img = resizedImg;
-        }
-
-        // Mettre à jour le PictureBox avec l'image redimensionnée
-        pictureBox.Image = img.ToBitmap();
+        
+        double scale = Math.Min((double)MAX_WIDTH / img.Width, (double)MAX_HEIGHT / img.Height);
+        Size newSize = new Size((int)(img.Width * scale), (int)(img.Height * scale));
+        Mat resizedImg = new Mat();
+        CvInvoke.Resize(img, resizedImg, newSize);
+        img = resizedImg;
 
         Game game = new Game();
         game.Initialize(img);
-        CvInvoke.Imshow("Match Analysis", img);
-        CvInvoke.WaitKey(0);
+        pictureBox.Image = img.ToBitmap();
     }
 }
