@@ -125,7 +125,7 @@ namespace Foot
         private void Reset()
         {
             DBConnection dbConnection = new DBConnection();
-            string query = "DELETE FROM equipe_points";
+            string query = "DELETE FROM valiny";
 
             using (NpgsqlConnection conn = dbConnection.GetConnection())
             {
