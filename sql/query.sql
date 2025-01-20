@@ -1,12 +1,9 @@
-CREATE VIEW equipe_points AS
-SELECT 
-    e.id_equipe,
-    SUM(s.points) AS total_points
-FROM 
-    Equipes e
-JOIN 
-    players p ON e.id_equipe = p.id_equipe
-JOIN 
-    scores s ON p.id_player = s.id_player
-GROUP BY 
-    e.id_equipe;
+CREATE OR REPLACE VIEW equipe_points AS
+SELECT equipe_name, SUM(points) AS total_points
+FROM valiny
+GROUP BY equipe_name;
+
+CREATE OR REPLACE VIEW player_points AS
+SELECT id_player, equipe_name, SUM(points) AS total_points
+FROM valiny
+GROUP BY id_player, equipe_name;

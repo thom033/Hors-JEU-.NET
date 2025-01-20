@@ -13,17 +13,21 @@ namespace Foot
     {
         private DataGridView dataGridView;
         private Button resetButton;
+        private Button playerButton;
+        private Button teamButton;
 
-        public ScoreDisplay()
+        public ScoreDisplay(string action)
         {
             InitializeComponent();
-            LoadData();
+            LoadData(action);
         }
 
         private void InitializeComponent()
         {
             this.dataGridView = new DataGridView();
             this.resetButton = new Button();
+            this.playerButton = new Button();
+            this.teamButton = new Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             this.SuspendLayout();
             
@@ -37,10 +41,9 @@ namespace Foot
             this.dataGridView.Size = new System.Drawing.Size(800, 400);
             this.dataGridView.TabIndex = 0;
 
-            // 
             // resetButton
             // 
-            this.resetButton.Location = new System.Drawing.Point(350, 410);
+            this.resetButton.Location = new System.Drawing.Point(250, 410);
             this.resetButton.Name = "resetButton";
             this.resetButton.Size = new System.Drawing.Size(100, 30);
             this.resetButton.TabIndex = 1;
@@ -49,10 +52,34 @@ namespace Foot
             this.resetButton.Click += new System.EventHandler(this.ResetButton_Click);
 
             // 
+            // playerButton
+            // 
+            this.playerButton.Location = new System.Drawing.Point(370, 410);
+            this.playerButton.Name = "playerButton";
+            this.playerButton.Size = new System.Drawing.Size(100, 30);
+            this.playerButton.TabIndex = 2;
+            this.playerButton.Text = "Player Scores";
+            this.playerButton.UseVisualStyleBackColor = true;
+            this.playerButton.Click += new System.EventHandler(this.PlayerButton_Click);
+
+            // 
+            // teamButton
+            // 
+            this.teamButton.Location = new System.Drawing.Point(490, 410);
+            this.teamButton.Name = "teamButton";
+            this.teamButton.Size = new System.Drawing.Size(100, 30);
+            this.teamButton.TabIndex = 3;
+            this.teamButton.Text = "Team Scores";
+            this.teamButton.UseVisualStyleBackColor = true;
+            this.teamButton.Click += new System.EventHandler(this.TeamButton_Click);
+
+            // 
             // ScoreDisplay
             // 
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.resetButton);
+            this.Controls.Add(this.playerButton);
+            this.Controls.Add(this.teamButton);
             this.Controls.Add(this.dataGridView);
             this.Name = "ScoreDisplay";
             this.Text = "Team Scores";
@@ -60,10 +87,18 @@ namespace Foot
             this.ResumeLayout(false);
         }
 
-        private void LoadData()
+        private void LoadData(string action)
         {
             DBConnection dbConnection = new DBConnection();
-            string query = "SELECT * FROM equipe_points";
+            string query = "";
+            if (action.Equals("equipe"))
+            {
+                query = "SELECT * FROM equipe_points";
+            }
+            else
+            {
+                query = "SELECT * FROM player_points";
+            }
 
             using (NpgsqlConnection conn = dbConnection.GetConnection())
             {
@@ -91,12 +126,22 @@ namespace Foot
                 }
             }
 
-            LoadData();
+            LoadData("equipe");
         }
 
         private void ResetButton_Click(object sender, EventArgs e)
         {
             Reset();
+        }
+
+        private void PlayerButton_Click(object sender, EventArgs e)
+        {
+            LoadData("player");
+        }
+
+        private void TeamButton_Click(object sender, EventArgs e)
+        {
+            LoadData("equipe");
         }
 
         public new void Show()
