@@ -205,7 +205,8 @@ namespace Foot
                 double area = CvInvoke.ContourArea(contour);
                 Rectangle boundingBox = CvInvoke.BoundingRectangle(contour);
 
-                if (area > 50 && area < 500 && (double)boundingBox.Width / boundingBox.Height < 1.2)
+                // Ajustement pour détecter les ballons extrêmement petits
+                if (area > 5 && area < 500 && (double)boundingBox.Width / boundingBox.Height < 1.5)
                 {
                     BallPosition = new Point(boundingBox.X + boundingBox.Width / 2, boundingBox.Y + boundingBox.Height / 2);
                     CvInvoke.Circle(image, BallPosition, 10, new Bgr(Color.Yellow).MCvScalar, 2);
