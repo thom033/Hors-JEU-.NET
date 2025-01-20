@@ -415,5 +415,22 @@ namespace Foot
                 }
             }
         }
+
+        public void InsertArret(int playerId, string teamName, int points)
+        {
+            DBConnection dbConnection = new DBConnection();
+            using (NpgsqlConnection conn = dbConnection.GetConnection())
+            {
+                conn.Open();
+                string query = "INSERT INTO valiny (id_player, equipe_name, arret) VALUES (@playerId, @teamName, @points)";
+                using (NpgsqlCommand command = new NpgsqlCommand(query, conn))
+                {
+                    command.Parameters.AddWithValue("@playerId", playerId);
+                    command.Parameters.AddWithValue("@teamName", teamName);
+                    command.Parameters.AddWithValue("@points", points);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }
