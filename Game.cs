@@ -4,6 +4,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using System.Drawing;
 using Npgsql;
+using System.Linq;
 
 namespace Foot
 {
@@ -34,6 +35,9 @@ namespace Foot
             private set { detectedGoals = value; }
         }
 
+        public Player Goal1 { get; set; }  // Gardien équipe 1
+        public Player Goal2 { get; set; }  // Gardien équipe 2
+
         // Initialisation du match
         public void Initialize(Mat image)
         {
@@ -45,6 +49,7 @@ namespace Foot
             InitializeGoals(image);
             InitializeAllTeams(image);
             InitializeTeamAmbonyGoal();
+            InitializeGoalkeepers();
             InitializeTeamTokonyHananaBol();
             IsGoal();
 
@@ -83,6 +88,10 @@ namespace Foot
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
             Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number} est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
+
+            // PlayerThatHasBall.Number
+            // TeamThatHasBall.Name
+            // points = 1
 
             // PlayerThatHasBall.Number
             // TeamThatHasBall.Name
@@ -148,6 +157,35 @@ namespace Foot
             TeamHautGoal = minBlue == max ? Blue : Red;
         }
 
+        // Nouvelle fonction pour détecter les gardiens
+        private void InitializeGoalkeepers()
+        {
+            // Pour l'équipe qui a le but en haut
+            if (TeamHautGoal.Name == "Red")
+            {
+                // Trouver le joueur le plus haut (Y minimum) pour l'équipe Red
+                Goal1 = Red.PlayerList.OrderBy(p => p.PositionPlayer.Y).FirstOrDefault();
+                // Trouver le joueur le plus bas (Y maximum) pour l'équipe Blue
+                Goal2 = Blue.PlayerList.OrderByDescending(p => p.PositionPlayer.Y).FirstOrDefault();
+            }
+            else
+            {
+                // Trouver le joueur le plus haut (Y minimum) pour l'équipe Blue
+                Goal1 = Blue.PlayerList.OrderBy(p => p.PositionPlayer.Y).FirstOrDefault();
+                // Trouver le joueur le plus bas (Y maximum) pour l'équipe Red
+                Goal2 = Red.PlayerList.OrderByDescending(p => p.PositionPlayer.Y).FirstOrDefault();
+            }
+
+            // Afficher les informations des gardiens
+            if (Goal1 != null)
+            {
+                Console.WriteLine($"Gardien 1 (Haut) - Équipe: Bleu, Numéro: {Goal1.Number}");
+            }
+            if (Goal2 != null)
+            {
+                Console.WriteLine($"Gardien 2 (Bas) - Équipe: Red , Numéro: {Goal2.Number}");
+            }
+        }
 
         // Initialize toutes les teams
         public void InitializeAllTeams(Mat image)
@@ -205,6 +243,8 @@ namespace Foot
                 double area = CvInvoke.ContourArea(contour);
                 Rectangle boundingBox = CvInvoke.BoundingRectangle(contour);
 
+                // Ajustement pour détecter les ballons extrêmement petits
+                if (area > 5 && area < 500 && (double)boundingBox.Width / boundingBox.Height < 1.5)
                 // Ajustement pour détecter les ballons extrêmement petits
                 if (area > 5 && area < 500 && (double)boundingBox.Width / boundingBox.Height < 1.5)
                 {
@@ -360,6 +400,7 @@ namespace Foot
                 {
                     Console.WriteLine($"But valide marqué par le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name}");
                     InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
+                    InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
                 }
                 else if (game1.PlayerThatHasBall != null && game1.PlayerThatHasBall.isOffSide)
                 {
@@ -381,11 +422,17 @@ namespace Foot
             {
                 if (goalArea.Contains(BallPosition))
                 {
+                    // Vérifier si un gardien a fait un arrêt
+                    if (IsGoalkeeperSave())
+                    {
+                        goal = false;
+                        Console.WriteLine("But arrêté par le gardien !");
+                        return;
+                    }
                     goal = true;
                     return;
                 }
             }
-
             goal = false;
         }
 
@@ -431,6 +478,95 @@ namespace Foot
                     command.ExecuteNonQuery();
                 }
             }
+        }
+
+        public void InsertGoal(int playerId, string teamName, int points)
+        {
+            DBConnection dbConnection = new DBConnection();
+            using (NpgsqlConnection conn = dbConnection.GetConnection())
+            {
+                conn.Open();
+                string query = "INSERT INTO valiny (id_player, equipe_name, points) VALUES (@playerId, @teamName, @points)";
+                using (NpgsqlCommand command = new NpgsqlCommand(query, conn))
+                {
+                    command.Parameters.AddWithValue("@playerId", playerId);
+                    command.Parameters.AddWithValue("@teamName", teamName);
+                    command.Parameters.AddWithValue("@points", points);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        // Ajouter cette nouvelle fonction dans la classe Game
+        public bool IsBallInFrontOfPlayer(Player player)
+        {
+            if (BallPosition.IsEmpty || player == null)
+                return false;
+
+            // Calculer le centre du joueur avec conversion explicite pour gérer le Diametre en double
+            Point playerCenter = new Point(
+                (int)(player.PositionPlayer.X + player.Diametre / 2),
+                (int)(player.PositionPlayer.Y + player.Diametre / 2)
+            );
+
+            // Déterminer si le joueur est dans l'équipe du haut en utilisant TeamHautGoal
+            bool isTopTeam = false;
+            if (TeamHautGoal.Name == "Red")
+                isTopTeam = true;
+            else if (TeamHautGoal.Name == "Blue")
+                isTopTeam = true;
+
+            // Zone de détection devant le joueur (rectangle) avec des doubles
+            double detectionWidth = player.Diametre * 2.5;  // Largeur de la zone de détection augmentée
+            double detectionHeight = player.Diametre * 1.5; // Hauteur de la zone de détection augmentée
+            Rectangle detectionZone;
+
+            if (isTopTeam)
+            {
+                // Pour l'équipe du haut, la zone est en dessous du joueur
+                detectionZone = new Rectangle(
+                    (int)(playerCenter.X - detectionWidth / 2),
+                    playerCenter.Y,
+                    (int)detectionWidth,
+                    (int)detectionHeight
+                );
+            }
+            else
+            {
+                // Pour l'équipe du bas, la zone est au-dessus du joueur
+                detectionZone = new Rectangle(
+                    (int)(playerCenter.X - detectionWidth / 2),
+                    playerCenter.Y - (int)detectionHeight,
+                    (int)detectionWidth,
+                    (int)detectionHeight
+                );
+            }
+
+            // Vérifier si le ballon est dans la zone de détection
+            bool ballInZone = detectionZone.Contains(BallPosition);
+
+            // Debug: afficher les informations
+            if (ballInZone)
+            {
+                Console.WriteLine($"Arrêt ! Le joueur {player.Number} a le ballon devant lui");
+            }
+
+            return ballInZone;
+        }
+
+        // Fonction utilitaire pour vérifier si un gardien fait un arrêt
+        public bool IsGoalkeeperSave()
+        {
+            // Vérifier pour les deux gardiens
+            if (IsBallInFrontOfPlayer(Goal1))
+            {
+                return true;
+            }
+            if (IsBallInFrontOfPlayer(Goal2))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
