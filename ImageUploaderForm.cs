@@ -161,7 +161,7 @@ public class ImageUploaderForm : Form
 
     private void DisplayScore_Click(object sender, EventArgs e)
     {
-        ScoreDisplay scoreDisplay = new ScoreDisplay("equipe");
+        ScoreDisplay scoreDisplay = new ScoreDisplay();
         scoreDisplay.Show();
     }
 }
