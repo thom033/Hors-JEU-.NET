@@ -29,7 +29,7 @@ CREATE TABLE valiny(
     id_valiny SERIAL PRIMARY KEY,
     id_player INT NOT NULL,
     equipe_name VARCHAR(255) NOT NULL,
-    points INT NOT NULL
+    points INT
 );
 
 ALTER TABLE valiny ADD COLUMN arret INT;

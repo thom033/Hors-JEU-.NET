@@ -88,15 +88,6 @@ namespace Foot
             Console.WriteLine("-------------------------------------------------------------------");
             Console.WriteLine($"Equipe qui a le ballon: {TeamThatHasBall.Name}");
             Console.WriteLine($"Player qui a le ballon: {PlayerThatHasBall.Number} est {(PlayerThatHasBall.isOffSide ? "hors-jeu" : "en jeu")}");
-
-            // PlayerThatHasBall.Number
-            // TeamThatHasBall.Name
-            // points = 1
-
-            // PlayerThatHasBall.Number
-            // TeamThatHasBall.Name
-            // points = 1
-
         }
 
         // Mijery Team tokony hanana anle bol
@@ -400,7 +391,6 @@ namespace Foot
                 {
                     Console.WriteLine($"But valide marqué par le joueur {game1.PlayerThatHasBall.Number} de l'équipe {game1.TeamThatHasBall.Name}");
                     InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
-                    InsertGoal(game1.PlayerThatHasBall.Number, game1.TeamThatHasBall.Name, 1);
                 }
                 else if (game1.PlayerThatHasBall != null && game1.PlayerThatHasBall.isOffSide)
                 {
@@ -480,23 +470,6 @@ namespace Foot
             }
         }
 
-        public void InsertGoal(int playerId, string teamName, int points)
-        {
-            DBConnection dbConnection = new DBConnection();
-            using (NpgsqlConnection conn = dbConnection.GetConnection())
-            {
-                conn.Open();
-                string query = "INSERT INTO valiny (id_player, equipe_name, points) VALUES (@playerId, @teamName, @points)";
-                using (NpgsqlCommand command = new NpgsqlCommand(query, conn))
-                {
-                    command.Parameters.AddWithValue("@playerId", playerId);
-                    command.Parameters.AddWithValue("@teamName", teamName);
-                    command.Parameters.AddWithValue("@points", points);
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
         // Ajouter cette nouvelle fonction dans la classe Game
         public bool IsBallInFrontOfPlayer(Player player)
         {
@@ -560,10 +533,12 @@ namespace Foot
             // Vérifier pour les deux gardiens
             if (IsBallInFrontOfPlayer(Goal1))
             {
+                InsertArret(Goal1.Number, TeamHautGoal.Name, 1);
                 return true;
             }
             if (IsBallInFrontOfPlayer(Goal2))
             {
+                InsertArret(Goal2.Number, TeamHautGoal.Name, 1);
                 return true;
             }
             return false;
