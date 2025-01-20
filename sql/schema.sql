@@ -34,13 +34,3 @@ CREATE TABLE valiny(
 
 ALTER TABLE valiny ADD COLUMN arret INT;
 
-CREATE OR REPLACE VIEW equipe_points AS
-SELECT equipe_name, SUM(points) AS total_points
-FROM valiny
-GROUP BY equipe_name;
-
-CREATE OR REPLACE VIEW equipe_arret AS 
-SELECT equipe_name, SUM(arret) AS total_arret 
-FROM valiny WHERE arret IS NOT NULL 
-GROUP BY equipe_name;
-
