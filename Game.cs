@@ -490,13 +490,16 @@ namespace Foot
                 isTopTeam = true;
 
             // Zone de détection devant le joueur (rectangle) avec des doubles
-            double detectionWidth = player.Diametre * 2.5;  // Largeur de la zone de détection augmentée
-            double detectionHeight = player.Diametre * 1.5; // Hauteur de la zone de détection augmentée
+            double detectionWidth = player.Diametre * 1.5;  // Largeur réduite pour être plus précis
+            double detectionHeight = player.Diametre * 2.0; // Hauteur augmentée pour mieux détecter devant
             Rectangle detectionZone;
 
+            // Vérifier si le ballon est dans la bonne direction (devant le joueur)
+            bool isInCorrectDirection;
             if (isTopTeam)
             {
-                // Pour l'équipe du haut, la zone est en dessous du joueur
+                // Pour l'équipe du haut, le ballon doit être plus bas que le joueur
+                isInCorrectDirection = BallPosition.Y > playerCenter.Y;
                 detectionZone = new Rectangle(
                     (int)(playerCenter.X - detectionWidth / 2),
                     playerCenter.Y,
@@ -506,7 +509,8 @@ namespace Foot
             }
             else
             {
-                // Pour l'équipe du bas, la zone est au-dessus du joueur
+                // Pour l'équipe du bas, le ballon doit être plus haut que le joueur
+                isInCorrectDirection = BallPosition.Y < playerCenter.Y;
                 detectionZone = new Rectangle(
                     (int)(playerCenter.X - detectionWidth / 2),
                     playerCenter.Y - (int)detectionHeight,
@@ -515,8 +519,8 @@ namespace Foot
                 );
             }
 
-            // Vérifier si le ballon est dans la zone de détection
-            bool ballInZone = detectionZone.Contains(BallPosition);
+            // Vérifier si le ballon est dans la zone de détection ET dans la bonne direction
+            bool ballInZone = detectionZone.Contains(BallPosition) && isInCorrectDirection;
 
             // Debug: afficher les informations
             if (ballInZone)
